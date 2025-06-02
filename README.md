@@ -18,12 +18,6 @@ A powerful Streamlit web app that allows you to upload documents (`.pdf`, `.docx
 
 ---
 
-## 🖥️ Demo
-
-![App Screenshot](https://placehold.co/800x400?text=Streamlit+App+Screenshot)
-
----
-
 ## 🛠️ Tech Stack
 
 - [Streamlit](https://streamlit.io/) – UI and app framework
@@ -45,5 +39,35 @@ The Gemini model is prompted with:
   "topics": ["all the topics covered in the document"],
   "summary": "detailed and informative summary of the document"
 }
+```
+---
 
+## ⚙️ Setup Instructions
 
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/revanthbethala/pdf-summarizer.git
+cd pdf-summarizer
+```
+### 2. Create and Activate a Virtual Environment (Recommended)
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+### 4. Add Your Gemini API Key  in .env file
+
+```bash
+GEMINI_API_KEY=your_api_key_here
+```
+
+### 5. Run the app
+```bash
+streamlit run app.py
+```
