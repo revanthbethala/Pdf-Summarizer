@@ -8,6 +8,7 @@ import re
 import os
 
 load_dotenv()
+
 SYSTEM_MESSAGE = """You are an intelligent text summarizer. Your task is to summarize the structured information
 from the given text and convert it into a pure JSON format. The JSON format is as follows:
 {
@@ -63,7 +64,7 @@ def summarize_with_gemini(text):
 
 st.title("PDF SUMMARIZER")
 uploaded_file = st.file_uploader(
-    "Upload a file", accept_multiple_files=False, type=["pdf", "docx", "txt"]
+    "Upload a file", accept_multiple_files=False, type=["pdf", "docx", "txt"],
 )
 extracted_text = ""
 
