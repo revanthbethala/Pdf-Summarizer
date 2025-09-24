@@ -182,44 +182,87 @@ def extract_text(uploaded_file):
     return " ".join(decoded_lines)
 
 
-
-
-
 # -------------------- AI FUNCTIONS --------------------
 
 
+# -------------------- HELPER: CHUNKING --------------------
+def chunk_text(text, max_tokens=2000):
+    """
+    Splits the text into smaller chunks.
+    max_tokens is approximate number of words per chunk.
+    """
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), max_tokens):
+        chunk = " ".join(words[i : i + max_tokens])
+        chunks.append(chunk)
+    return chunks
+
+
+# -------------------- AI FUNCTIONS WITH CHUNKING --------------------
+@st.cache_data(show_spinner=False)
 def generate_summary(text):
     try:
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        prompt = f"{SUMMARY_SYSTEM_MESSAGE}\n\nContent to summarize:\n{text}"
-        model = genai.GenerativeModel(model_name)
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-            ),
-        )
-        formatted_response = response.text.replace("```json", "").replace("```", "")
-        formatted_response = json.loads(formatted_response)
-        return formatted_response
+        chunks = chunk_text(text, max_tokens=1000)  # smaller chunks for long docs
+        chunk_summaries = []
+
+        for chunk in chunks:
+            prompt = f"{SUMMARY_SYSTEM_MESSAGE}\n\nContent to summarize:\n{chunk}"
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                ),
+            )
+            formatted_response = response.text.replace("```json", "").replace("```", "")
+            chunk_summary = json.loads(formatted_response)
+            chunk_summaries.append(chunk_summary)
+
+        # Combine chunk summaries into a final summary
+        combined_summary_text = " ".join([c["summary"] for c in chunk_summaries])
+        combined_topics = []
+        for c in chunk_summaries:
+            for t in c.get("topics", []):
+                if t not in combined_topics:
+                    combined_topics.append(t)
+
+        final_summary = {
+            "title": chunk_summaries[0].get("title", "Untitled"),
+            "topics": combined_topics,
+            "summary": combined_summary_text,
+        }
+        return final_summary
+
     except Exception as e:
+        print(str(e))
         return {"error": str(e)}
 
-
+@st.cache_data(show_spinner=False)
 def generate_quiz(text):
     try:
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        prompt = f"{QUIZ_SYSTEM_MESSAGE}\n\nContent for quiz generation:\n{text}"
-        model = genai.GenerativeModel(model_name)
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-            ),
-        )
-        formatted_response = response.text.replace("```json", "").replace("```", "")
-        formatted_response = json.loads(formatted_response)
-        return formatted_response
+        chunks = chunk_text(text, max_tokens=1000)
+        all_quizzes = []
+
+        for chunk in chunks:
+            prompt = f"{QUIZ_SYSTEM_MESSAGE}\n\nContent for quiz generation:\n{chunk}"
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                ),
+            )
+            formatted_response = response.text.replace("```json", "").replace("```", "")
+            chunk_quiz = json.loads(formatted_response)
+            all_quizzes.extend(chunk_quiz.get("quiz", []))
+
+        # Keep only 10 questions max
+        final_quiz = {"quiz": all_quizzes[:10]}
+        return final_quiz
+
     except Exception as e:
         return {"error": str(e)}
 
@@ -256,7 +299,7 @@ def reset_app():
 # HOME PAGE
 if st.session_state.page == "home":
     st.markdown(
-        '<h1 class="main-header">📚 AI Summarizer + Quiz Generator</h1>',
+        '<h1 class="main-header">AI-Powered Document Summarization and Assessment Tool</h1>',
         unsafe_allow_html=True,
     )
 
