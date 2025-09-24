@@ -6,8 +6,6 @@ import json
 from dotenv import load_dotenv
 import re
 import os
-import tempfile
-import whisper  # OpenAI Whisper for speech-to-text
 
 load_dotenv()
 
@@ -184,16 +182,7 @@ def extract_text(uploaded_file):
     return " ".join(decoded_lines)
 
 
-def extract_video(uploaded_file):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmpfile:
-        tmpfile.write(uploaded_file.read())
-        tmpfile_path = tmpfile.name
 
-    # Speech-to-text using Whisper
-    model = whisper.load_model("base")
-    result = model.transcribe(tmpfile_path)
-    os.unlink(tmpfile_path)  # Clean up temp file
-    return result["text"]
 
 
 # -------------------- AI FUNCTIONS --------------------
@@ -274,8 +263,8 @@ if st.session_state.page == "home":
     uploaded_file = st.file_uploader(
         "Choose a file",
         accept_multiple_files=False,
-        type=["pdf", "docx", "txt", "mp4", "mkv", "mov"],
-        help="Upload PDF, DOCX, TXT, or Video files for analysis",
+        type=["pdf", "docx", "txt"],
+        help="Upload PDF, DOCX, TXT files for analysis",
     )
 
     if uploaded_file:
@@ -288,9 +277,6 @@ if st.session_state.page == "home":
                 st.session_state.extracted_text = extract_doc(uploaded_file)
             elif uploaded_file.name.endswith("txt"):
                 st.session_state.extracted_text = extract_text(uploaded_file)
-            elif uploaded_file.name.endswith(("mp4", "mkv", "mov")):
-                st.session_state.extracted_text = extract_video(uploaded_file)
-
         if st.session_state.extracted_text:
             with st.spinner("🧠 Generating intelligent summary..."):
                 st.session_state.summary_data = generate_summary(
